@@ -6,16 +6,25 @@ import {
   View,
   ScrollView,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { FormHandles } from '@unform/core';
 import { Form } from '@unform/mobile';
+import * as Yup from 'yup';
 
+import getValidationErrors from '../../utils/getValidationErrors';
 import logoImg from '../../assets/logo.png';
 import { Container, Title, BackToSignin, BackToSigninText } from './styles';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+
+interface SignupFormData {
+  name: string;
+  email: string;
+  password: string;
+}
 
 const Signup: React.FC = () => {
   const navigation = useNavigation();
@@ -23,9 +32,47 @@ const Signup: React.FC = () => {
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
-  const handleSignup = useCallback((data: object) => {
-    console.log(data);
-  }, []);
+  const handleSignup = useCallback(
+    async (data: object) => {
+      try {
+        formRef.current?.setErrors({});
+
+        const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório.'),
+          email: Yup.string()
+            .required('E-mail obrigatório.')
+            .email('E-mail inválido.'),
+          password: Yup.string().min(6, 'Mínimo de 6 caracteres.'),
+        });
+
+        await schema.validate(data, {
+          abortEarly: false,
+        });
+
+        // await api.post('/users', data);
+        // history.push('/');
+
+        Alert.alert(
+          'Cadastro Realizado!',
+          'Você já pode fazer login no GoBarber!',
+        );
+      } catch (error) {
+        if (error instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(error);
+
+          formRef.current?.setErrors(errors);
+
+          return;
+        }
+
+        Alert.alert(
+          'Erro no Cadastro.',
+          'Ocorreu um erro ao fazer cadastro. Tente novamente.',
+        );
+      }
+    },
+    [],
+  );
 
   return (
     <>
